@@ -241,11 +241,11 @@ function getIntensity(score) {
 }
 
 function intensityToColor(intensity) {
-    if (intensity > 0.80) return '#e05050';  // Critical — red
-    if (intensity > 0.60) return '#e07c30';  // High — orange
-    if (intensity > 0.40) return '#f0a500';  // Moderate — amber
-    if (intensity > 0.20) return '#3a7abf';  // Low — blue
-    return '#2a4a72';                         // Trace
+    if (intensity > 0.80) return '#ef4444';  // Critical
+    if (intensity > 0.60) return '#f97316';  // High
+    if (intensity > 0.40) return '#eab308';  // Moderate
+    if (intensity > 0.20) return '#3b82f6';  // Low
+    return '#1e293b';                        // Trace
 }
 
 function styleFeature(feature) {
@@ -253,10 +253,10 @@ function styleFeature(feature) {
 
     if (!data) {
         return {
-            fillColor: '#1e2330',
+            fillColor: '#0f172a',
             weight: 0.5,
             opacity: 1,
-            color: 'rgba(255,255,255,0.06)',
+            color: 'rgba(255,255,255,0.08)',
             dashArray: '',
             fillOpacity: 1
         };
@@ -290,8 +290,8 @@ function highlightFeature(e) {
     const data = countryData[countryName];
 
     layer.setStyle({
-        weight: 2,
-        color: 'rgba(255,255,255,0.35)',
+        weight: 1.5,
+        color: 'rgba(255,255,255,0.5)',
         fillOpacity: 1
     });
 
@@ -303,7 +303,7 @@ function highlightFeature(e) {
 
     const tooltipHtml = `
         <div class="tooltip-name">${countryName}</div>
-        ${data ? `<div class="tooltip-score">Score: ${data.score.toLocaleString()}</div>` : '<div style="color:#3d4455;font-size:0.68rem;">No data</div>'}
+        ${data ? `<div class="tooltip-score">Score: ${data.score.toLocaleString()}</div>` : '<div style="color:#64748b;font-size:0.8rem;font-weight:500;">No data</div>'}
         ${topTopic ? `<div class="tooltip-topic"># ${topTopic[0]}</div>` : ''}
     `;
 
