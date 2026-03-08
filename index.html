@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Global Knowledge Map</title>
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="app-container">
+
+        <div id="map"></div>
+
+        <!-- Header -->
+        <div id="header-overlay">
+            <div class="header-brand">
+                <div class="brand-icon">
+                    <i class="fas fa-globe"></i>
+                </div>
+                <h1>Global Knowledge Map</h1>
+            </div>
+            <div class="header-divider"></div>
+            <div id="stats-bar">
+                <div class="stat-item">
+                    <span class="stat-dot"></span>
+                    <span id="last-updated">Connecting…</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-dot amber"></span>
+                    <span>Topics&nbsp;<b id="active-topics">—</b></span>
+                </div>
+                <div class="stat-item">
+                    <span>Countries&nbsp;<b id="active-countries">—</b></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Loading -->
+        <div id="loading-indicator" class="hidden">
+            <span>Fetching live data</span>
+            <div class="loading-bar"><div class="loading-bar-fill"></div></div>
+        </div>
+
+        <!-- Legend -->
+        <div id="map-legend">
+            <div class="legend-title">Activity Level</div>
+            <div class="legend-row">
+                <div class="legend-swatch" style="background:#e05050;"></div>
+                <span>Critical</span>
+            </div>
+            <div class="legend-row">
+                <div class="legend-swatch" style="background:#e07c30;"></div>
+                <span>High</span>
+            </div>
+            <div class="legend-row">
+                <div class="legend-swatch" style="background:#f0a500;"></div>
+                <span>Moderate</span>
+            </div>
+            <div class="legend-row">
+                <div class="legend-swatch" style="background:#3a7abf;"></div>
+                <span>Low</span>
+            </div>
+            <div class="legend-row">
+                <div class="legend-swatch" style="background:#1e2330;"></div>
+                <span>No data</span>
+            </div>
+        </div>
+
+        <!-- Side Panel -->
+        <div id="side-panel" class="hidden">
+            <div class="panel-header">
+                <div class="panel-header-left">
+                    <span class="panel-label">Country Report</span>
+                    <h2 id="panel-country-name">—</h2>
+                </div>
+                <button id="close-panel-btn" title="Close"><i class="fas fa-times"></i></button>
+            </div>
+
+            <div class="panel-content">
+
+                <!-- Score -->
+                <div class="metric-card">
+                    <div class="metric-header">
+                        <h3>Activity Score</h3>
+                        <span id="popularity-score-value">0</span>
+                    </div>
+                    <div class="score-bar-container">
+                        <div id="popularity-score-bar" class="score-bar" style="width:0%"></div>
+                    </div>
+                    <div class="score-sublabel">Aggregated from Reddit &amp; Wikipedia mentions</div>
+                </div>
+
+                <!-- Topics -->
+                <div class="topics-section">
+                    <div class="section-header">
+                        <h3><i class="fas fa-hashtag"></i> Trending Topics</h3>
+                        <span class="section-count" id="topics-count">0</span>
+                    </div>
+                    <ul id="top-topics-list"></ul>
+                </div>
+
+                <!-- Articles -->
+                <div class="related-section">
+                    <div class="section-header">
+                        <h3><i class="fas fa-link"></i> Sources</h3>
+                        <span class="section-count" id="articles-count">0</span>
+                    </div>
+                    <ul id="related-articles-list"></ul>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+    <script src="script.js"></script>
+</body>
+</html>
