@@ -1,5 +1,7 @@
 # Knowledge Map
 
+![Knowledge Map — Live Global Trends Dashboard](https://i.ibb.co.com/ynbJZ2cT/knowmap.png)
+
 A real-time world map that shows which countries are being talked about right now, and what topics are trending in each of them. It pulls live data from Reddit and Wikipedia every five minutes, processes it entirely in the browser, and paints each country on the map with a color that reflects how much activity it currently has.
 
 No server required. No account needed. Open the files in a browser and it works.
@@ -180,3 +182,7 @@ To refresh data more frequently, lower the `updateInterval` value. Be mindful th
 - Wikipedia's `mostread` feed only becomes meaningful partway through the day, since it is based on views accumulated since midnight UTC. Early in the day it may show fewer results or less accurate trending data than later in the day.
 
 ---
+
+## License
+
+MIT License. You are free to use, modify, and distribute this code for any purpose. See the LICENSE file for the full text.
