@@ -180,7 +180,3 @@ To refresh data more frequently, lower the `updateInterval` value. Be mindful th
 - Wikipedia's `mostread` feed only becomes meaningful partway through the day, since it is based on views accumulated since midnight UTC. Early in the day it may show fewer results or less accurate trending data than later in the day.
 
 ---
-
-## License
-
-MIT License. You are free to use, modify, and distribute this code for any purpose. See the LICENSE file for the full text.
