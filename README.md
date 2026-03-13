@@ -1,184 +1,118 @@
 # Knowledge Map
 
-![Knowledge Map — Live Global Trends Dashboard](https://i.ibb.co.com/ynbJZ2cT/knowmap.png)
+Real-time global intelligence dashboard. Aggregates live signals from Reddit and Wikipedia, maps them to countries, and renders the result as an interactive choropleth — entirely client-side, zero infrastructure.
 
-A real-time world map that shows which countries are being talked about right now, and what topics are trending in each of them. It pulls live data from Reddit and Wikipedia every five minutes, processes it entirely in the browser, and paints each country on the map with a color that reflects how much activity it currently has.
+![Knowledge Map — Live Global Trends Dashboard](https://i.ibb.co.com/YFdbhc02/Screenshot-185.png)
 
-No server required. No account needed. Open the files in a browser and it works.
+## Overview
 
----
+Knowledge Map fetches trending content from five Reddit feeds and Wikipedia's most-read articles, performs entity recognition against a curated dictionary of ~120 countries (including aliases and demonyms), scores each country by weighted mention volume, and paints a Leaflet-powered world map in real time.
 
-## What It Does
+**No backend. No API keys. No build step.** Three files, open in a browser, done.
 
-When you open Knowledge Map, it fetches the top posts from Reddit's world news and popular feeds, as well as today's most-read Wikipedia articles. It scans the titles of those posts and articles looking for country names and keywords. Every time it finds a country mentioned, that country's activity score goes up. The higher the score, the warmer the color on the map, ranging from dark blue for low activity all the way to red for regions that are dominating global conversation at that moment.
+## Quick Start
 
-Click any country on the map and a side panel opens showing that region's activity score, its top trending topics ranked by how often they appear, and the actual articles and posts that put it on the map, each linking back to the original source.
+```bash
+# Option A — any static file server
+npx -y http-server . -p 8080
 
-The data refreshes automatically every five minutes without you doing anything. You can also force a refresh manually using the Sync button, or press `r` on your keyboard as a shortcut.
-
----
-
-## Features
-
-**Live data, no backend**
-All data fetching happens directly from your browser to Reddit's public JSON API and Wikipedia's REST API. There is no server in the middle, no database, and no API keys to configure.
-
-**Interactive world map**
-Built on Leaflet with a dark CartoDB tile layer. Every country is clickable. Hovering over a country shows a tooltip with its name, current activity score, and top trending topic. Clicking zooms the map to that country and opens the detail panel.
-
-**Activity scoring and color coding**
-Each country's score is calculated by summing the Reddit upvote counts and normalized Wikipedia view counts from every article that mentions it. The score is then run through a logarithmic scale so that a country with moderate coverage still shows clearly on the map without being completely overshadowed by high-traffic countries like the United States.
-
-The color scale works as follows:
-
-| Color  | Label    | What it means                                     |
-|--------|----------|---------------------------------------------------|
-| Red    | Critical | Extremely high mention volume right now           |
-| Orange | High     | Significantly above average activity              |
-| Yellow | Moderate | Noticeable but not dominant in current coverage   |
-| Blue   | Low      | Present in the data but not a major focus         |
-| Dark   | No data  | No mentions found in the current fetch cycle      |
-
-**Topic markers**
-For countries with enough activity, a floating hashtag label appears directly on the map showing that country's single most-mentioned topic at the moment.
-
-**Region detail panel**
-Clicking a country opens a slide-in panel on desktop or a bottom drawer on mobile. It shows the country's activity score as both a number and a progress bar, up to eight trending topics with their relative frequency shown as a mini bar chart, and up to ten source articles sorted by their score, each linking to the original Reddit post or Wikipedia page.
-
-**Time history slider**
-Every time the data refreshes, a snapshot is saved. The history panel in the bottom left contains a slider that lets you scrub back through up to the last 24 snapshots (roughly 12 hours of history) and see how country activity looked at earlier points in time. Dragging back to the rightmost position returns you to live data.
-
-**Trending ticker**
-A scrolling bar along the bottom of the screen shows the top 20 trending topics globally across all countries at the current moment.
-
-**Search**
-The search bar at the top lets you find any country by name. Results are sorted so countries with higher current activity appear first. You can navigate the results with the arrow keys and press Enter to select. Pressing `/` on your keyboard focuses the search bar from anywhere on the page.
-
-**Data freshness indicator**
-A small indicator in the header shows how long ago the data was last fetched, updating its color from green to yellow to orange as the data ages toward the five-minute refresh threshold.
-
-**Share**
-Each open region panel has a share button that copies a short summary of that region's name and current score to your clipboard, ready to paste anywhere.
-
----
-
-## How to Run It
-
-This project has no build step and no dependencies to install. It is three files.
-
-1. Download or clone the repository.
-2. Open `index.html` in any modern web browser.
-
-That is all. The browser loads Leaflet from a CDN, loads the world map geometry from a public GitHub-hosted file, and then fetches live data from Reddit and Wikipedia.
-
-If you open it as a local file directly from your file system using a `file://` URL, some browsers will block the external fetch requests due to security restrictions. In that case, serve the files through any simple local web server. For example, if you have Python installed:
-
-```
+# Option B — Python
 python3 -m http.server 8080
 ```
 
-Then open `http://localhost:8080` in your browser.
+Open `http://localhost:8080`. Data loads automatically on first paint.
 
----
+> **Note:** Opening `index.html` directly via `file://` will fail in most browsers due to CORS restrictions on the fetch calls to Reddit and Wikipedia.
 
-## File Structure
+## Architecture
 
 ```
-knowledge-map/
-  index.html   — The page structure and all UI elements
-  style.css    — All visual styling, layout, animations, and responsive design
-  script.js    — All application logic, data fetching, map rendering, and UI behavior
+index.html    Semantic markup, ARIA roles, responsive meta
+style.css     Design tokens (CSS custom properties), layout, responsive breakpoints
+script.js     All runtime logic — fetch, NLP pipeline, Leaflet bindings, UI state
 ```
 
-There are no build tools, no package managers, no compiled assets, and no configuration files. Everything the application needs is either in these three files or loaded from public CDNs at runtime.
+No frameworks. No transpilation. No package.json.
 
----
+### Data Pipeline
 
-## How the Data Processing Works
+```
+Reddit JSON API ──┐
+                   ├──▶ normalize scores ──▶ detect countries ──▶ extract topics ──▶ classify category
+Wikipedia REST ───┘                              │                      │                    │
+                                                 ▼                      ▼                    ▼
+                                          country scores          TF-ICF ranking        filter by tab
+                                                 │
+                                                 ▼
+                                        z-score normalization ──▶ intensity ──▶ color interpolation ──▶ render
+```
 
-This section explains what happens under the hood when the app fetches data, written so that anyone can follow along.
+**Entity recognition** uses a pre-built lookup map of country names, ISO aliases, capital cities, and demonyms — sorted by key length (longest-first) to avoid partial matches. A deny list filters out false positives like "Swiss cheese", "French toast", and "Korean BBQ".
 
-**Step 1: Fetch**
-The app simultaneously requests three URLs: the top 100 posts from r/worldnews, the top 50 posts from r/popular, and today's most-read Wikipedia articles. These requests run in parallel. If one or two of them fail, the app continues with whatever succeeded.
+**Scoring** applies `log10` normalization to Reddit upvotes and median-relative scaling to Wikipedia views before combining them. The final per-country intensity is derived from z-score normalization across all active countries, mapped to `[0, 1]`.
 
-**Step 2: Identify countries**
-Each post title and article title is scanned against a lookup table of around 70 countries and their common variants. For example, "British", "Britain", and "England" all map to "United Kingdom". The matching uses whole-word boundaries so a word like "Iranian" correctly maps to "Iran" without false-positives from partial matches.
+**Topic ranking** uses TF-ICF (Term Frequency × Inverse Country Frequency) — a variant of TF-IDF adapted for the country dimension instead of documents. Topics that appear in many countries are down-weighted; topics concentrated in a single region are surfaced.
 
-**Step 3: Score**
-For Reddit posts, the score is the raw upvote count from the API. For Wikipedia articles, the page view count is divided by 150 to bring it into a roughly comparable range with Reddit scores. Every country mentioned in a post receives that post's score added to its running total.
+## Features
 
-**Step 4: Extract topics**
-Keywords are pulled from each title by removing punctuation, splitting on whitespace, discarding words shorter than four characters, and filtering out a list of about 80 common English stop words (the, is, in, report, police, and so on). What remains becomes that article's topics, each associated with the countries the article mentioned.
+| Feature | Description |
+|---|---|
+| **Live choropleth** | Animated color transitions via `requestAnimationFrame` lerping between hex values |
+| **Detail panel** | Score, trending topics (bar chart), sources with metadata, topical neighbours via cosine similarity |
+| **Category filters** | Conflict & Politics · Science & Tech · Economy · Culture & Sports |
+| **Trending ticker** | Top 20 global topics, click to flash-highlight related countries |
+| **Search** | Fuzzy country lookup sorted by current activity score, keyboard-navigable |
+| **Freshness indicator** | Green / amber / red dot reflecting data age |
+| **Mobile drawer** | Bottom-sheet with drag-to-dismiss on touch devices |
+| **Keyboard shortcuts** | `/` search · `R` refresh · `F` toggle filters · `Esc` close panel |
 
-**Step 5: Render**
-Each country's final score is mapped to a color using a base-10 logarithm. This is intentional: a country with a score of 10,000 should look noticeably more active than one with 1,000, but not ten times more intense. The logarithm compresses the range so the map stays readable across a wide spread of values.
+## Data Sources
 
----
+| Source | Endpoint | Auth | Rate Limits |
+|---|---|---|---|
+| Reddit | `/r/{subreddit}/hot.json` | None | ~60 req/min per IP |
+| Wikipedia | Wikimedia REST `/metrics/pageviews/top` | None | Generous for single-user |
 
-## Data Sources and Limitations
+**Subreddits polled:** `worldnews` (100), `popular` (50), `news` (50), `technology` (50), `science` (50).
 
-**Reddit**
-Uses the public JSON API available at `reddit.com/r/subreddit.json`. No authentication is needed. Rate limits on this endpoint are generous for personal use but could become a factor if the app were served to a large number of simultaneous users, since each user's browser makes its own requests.
+Data refreshes every 5 minutes (`SYNC_INTERVAL`). Each user's browser fetches independently — there is no shared state.
 
-**Wikipedia**
-Uses the Wikimedia REST API endpoint for featured content, specifically the `mostread` articles feed for the current calendar date. This reflects the articles with the highest view counts for today so far.
+## Limitations
 
-**What this means for accuracy**
-The map shows what is being talked about in English-language media, not necessarily what is most important globally. A country experiencing a major event that is not being covered in English on Reddit or Wikipedia will not appear on the map. The scoring reflects volume of online discussion, which is heavily influenced by English-speaking internet demographics. This is a tool for exploring online conversation patterns, not a neutral measure of geopolitical significance.
-
-**Country recognition**
-The country identification is based on a fixed keyword list. It will miss references to countries that use unusual phrasings, and it has no understanding of context, so an article mentioning "French cuisine" will register as activity for France even if the article has nothing to do with French politics or current events.
-
----
+- **English-language bias.** The pipeline only processes English-language Reddit and Wikipedia. Events not covered in English media will not appear.
+- **No contextual disambiguation.** "French cuisine" registers as France activity. The deny list mitigates common false positives but is not exhaustive.
+- **Client-side only.** No persistence across sessions, no shared view between users, no historical data beyond the current session.
+- **Wikipedia daily lag.** The `mostread` endpoint reflects views accumulated since midnight UTC. Results improve throughout the day.
+- **Reddit rate limits.** During high-traffic periods, Reddit's public API may return 429s. The app degrades gracefully — it continues with whatever sources responded and notifies the user.
 
 ## Browser Support
 
-The application uses standard modern web platform features: `fetch`, `async/await`, `Promise.allSettled`, CSS custom properties, CSS Grid, `backdrop-filter`, and the Clipboard API. It works without issues in current versions of Chrome, Firefox, Safari, and Edge.
+Requires: `fetch`, `async/await`, `Promise.allSettled`, CSS custom properties, `backdrop-filter`, Clipboard API.
 
-Internet Explorer is not supported.
-
----
+Tested: Chrome, Firefox, Safari, Edge (current stable). No IE support.
 
 ## External Dependencies
 
-All dependencies are loaded from public CDNs and require an internet connection.
+All loaded from CDN at runtime — no install step.
 
-| Library       | Version | Purpose                                      |
-|---------------|---------|----------------------------------------------|
-| Leaflet       | 1.9.4   | Interactive map rendering and GeoJSON layers |
-| Font Awesome  | 6.4.0   | Icons throughout the interface               |
-| Plus Jakarta Sans | —   | Typography, loaded from Google Fonts         |
-
-The world map geometry (country borders) is loaded from a GeoJSON file hosted on GitHub at `github.com/johan/world.geo.json`.
-
----
+| Library | Version | CDN |
+|---|---|---|
+| Leaflet | 1.9.4 | unpkg |
+| Font Awesome | 6.5.1 | cdnjs |
+| Inter (font) | Variable | Google Fonts |
+| GeoJSON boundaries | — | [johan/world.geo.json](https://github.com/johan/world.geo.json) |
 
 ## Configuration
 
-A small configuration object at the top of `script.js` contains the only values you might want to change:
+Constants at the top of `script.js`:
 
 ```js
-const CONFIG = {
-    updateInterval: 300000,   // How often to refresh data, in milliseconds. 300000 = 5 minutes.
-    geoJsonUrl: '...',        // URL to the world map geometry file.
-    redditWorldNews,          // Reddit endpoint for world news posts.
-    redditPopular,            // Reddit endpoint for popular posts.
-    wikipediaFeatured         // Wikipedia endpoint for today's most-read articles.
-};
+const SYNC_INTERVAL = 5 * 60 * 1000;  // refresh cadence (ms)
+const GEOJSON_URL   = '...';           // country boundaries source
 ```
 
-To refresh data more frequently, lower the `updateInterval` value. Be mindful that Reddit's public API has rate limits and making requests too frequently may result in temporary blocks.
+Lower `SYNC_INTERVAL` for faster updates. Stay above 60s to avoid Reddit rate limits.
 
----
+## License
 
-## Known Limitations
-
-- The history slider is populated with real snapshots only after the app has been running long enough to accumulate them. On the first load, the earlier positions on the slider are filled with simulated data derived from the first real fetch, scaled down to approximate what earlier time periods might have looked like. This is clearly imperfect and is intended only to give the slider something to show immediately.
-
-- Because all fetching happens from the user's browser, there is no shared data between different people using the app. Two people opening the app at the same time will each run their own independent fetch cycles and may see slightly different results depending on timing.
-
-- The Reddit public API occasionally returns errors or rate-limit responses, especially during high-traffic periods. The app handles this gracefully by continuing with whatever data it has and showing an error toast notification.
-
-- Wikipedia's `mostread` feed only becomes meaningful partway through the day, since it is based on views accumulated since midnight UTC. Early in the day it may show fewer results or less accurate trending data than later in the day.
-
----
+MIT
