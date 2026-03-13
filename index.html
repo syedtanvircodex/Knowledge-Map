@@ -1,224 +1,157 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Knowledge Map — Live Global Trends</title>
-    <meta name="description" content="Real-time global knowledge map showing trending topics and activity across every region, powered by Reddit and Wikipedia.">
-    <meta name="theme-color" content="#020617">
-
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Knowledge Map — Real-Time Global Intelligence Dashboard</title>
+  <meta name="description" content="An interactive world map showing real-time global online attention from Reddit and Wikipedia. See where the world is focused right now." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-    <div id="app-container">
-
-        <div class="ambient-bg" aria-hidden="true"></div>
-
-        <div id="map" role="main" aria-label="Interactive world map"></div>
-
-        <div id="toast-container" role="status" aria-live="polite"></div>
-
-        <div class="top-nav-area">
-            <header id="header-overlay" class="ui-panel">
-                <div class="header-inner">
-                    <div class="header-brand">
-                        <div class="brand-icon" aria-hidden="true">
-                            <i class="fas fa-globe-americas"></i>
-                        </div>
-                        <div class="brand-text">
-                            <h1>Knowledge Map</h1>
-                            <div class="subtitle">Live Global Trends</div>
-                        </div>
-                    </div>
-                    <button id="toggle-header-btn" class="icon-btn collapse-btn desktop-only" aria-label="Toggle stats panel" aria-expanded="true">
-                        <i class="fas fa-chevron-left" aria-hidden="true"></i>
-                    </button>
-                    <button id="toggle-header-mobile-btn" class="icon-btn collapse-btn mobile-only" aria-label="Toggle stats panel" aria-expanded="true">
-                        <i class="fas fa-chevron-down" aria-hidden="true"></i>
-                    </button>
-                </div>
-
-                <div class="header-collapsible">
-                    <div class="header-divider" aria-hidden="true"></div>
-                    <div id="stats-bar" role="region" aria-label="Live statistics">
-                        <div class="stat-item" title="Connection status">
-                            <span class="pulse-dot" aria-hidden="true"></span>
-                            <span id="last-updated">Connecting…</span>
-                        </div>
-                        <div class="stat-item" title="Total active topics">
-                            <span class="stat-label">Topics</span>
-                            <b id="active-topics" class="stat-value">—</b>
-                        </div>
-                        <div class="stat-item" title="Regions with data">
-                            <span class="stat-label">Regions</span>
-                            <b id="active-countries" class="stat-value">—</b>
-                        </div>
-                        <div class="stat-item freshness-indicator" title="Data freshness">
-                            <span class="stat-label">Freshness</span>
-                            <span id="data-freshness" class="stat-value freshness-text">—</span>
-                        </div>
-                    </div>
-                    <div class="header-divider" aria-hidden="true"></div>
-                    <div class="header-controls">
-                        <button id="refresh-btn" class="btn-primary" title="Sync latest data" aria-label="Sync latest data">
-                            <i class="fas fa-sync-alt" aria-hidden="true"></i>
-                            <span class="btn-text">Sync</span>
-                        </button>
-                        <button id="reset-view-btn" class="btn-secondary" title="Reset map view" aria-label="Reset map view">
-                            <i class="fas fa-expand" aria-hidden="true"></i>
-                        </button>
-                    </div>
-                </div>
-            </header>
-
-            <div id="search-overlay" class="ui-panel search-panel" role="search">
-                <div class="search-container">
-                    <i class="fas fa-search search-icon" aria-hidden="true"></i>
-                    <input
-                        type="text"
-                        id="country-search"
-                        placeholder="Search region… (press /)"
-                        autocomplete="off"
-                        autocorrect="off"
-                        spellcheck="false"
-                        aria-label="Search for a region"
-                        aria-autocomplete="list"
-                        aria-controls="search-results"
-                    >
-                    <kbd class="search-shortcut desktop-only" aria-hidden="true">/</kbd>
-                    <button id="clear-search" class="icon-btn is-hidden" aria-label="Clear search">
-                        <i class="fas fa-times" aria-hidden="true"></i>
-                    </button>
-                </div>
-                <div class="search-dropdown-wrapper">
-                    <ul id="search-results" class="custom-scrollbar is-hidden" role="listbox" aria-label="Search results"></ul>
-                </div>
-            </div>
-        </div>
-
-        <div id="loading-indicator" class="ui-pill loading-hidden" role="status" aria-label="Loading data">
-            <div class="spinner" aria-hidden="true"></div>
-            <span>Fetching live data…</span>
-        </div>
-
-        <div class="bottom-left-controls">
-            <div id="time-lapse-controls" class="ui-panel time-lapse-panel" role="region" aria-label="Time history">
-                <div class="time-header">
-                    <div class="time-title"><i class="fas fa-history" aria-hidden="true"></i> History</div>
-                    <div class="time-display" id="time-lapse-time" aria-live="polite">Live</div>
-                    <button id="toggle-time-btn" class="icon-btn collapse-btn" aria-label="Toggle time controls" aria-expanded="true">
-                        <i class="fas fa-chevron-down" aria-hidden="true"></i>
-                    </button>
-                </div>
-                <div class="time-content">
-                    <input type="range" id="time-slider" min="0" max="0" value="0" class="custom-slider" aria-label="Rewind through data history">
-                </div>
-            </div>
-
-            <div id="map-legend" class="ui-panel" role="region" aria-label="Map legend">
-                <div class="legend-header">
-                    <div class="legend-title"><i class="fas fa-layer-group" aria-hidden="true"></i> Activity</div>
-                    <button id="toggle-legend-btn" class="icon-btn collapse-btn" aria-label="Toggle legend" aria-expanded="true">
-                        <i class="fas fa-chevron-down" aria-hidden="true"></i>
-                    </button>
-                </div>
-                <div class="legend-content">
-                    <div class="legend-row">
-                        <div class="legend-swatch swatch-critical" aria-hidden="true"></div>
-                        <span>Critical</span>
-                    </div>
-                    <div class="legend-row">
-                        <div class="legend-swatch swatch-high" aria-hidden="true"></div>
-                        <span>High</span>
-                    </div>
-                    <div class="legend-row">
-                        <div class="legend-swatch swatch-moderate" aria-hidden="true"></div>
-                        <span>Moderate</span>
-                    </div>
-                    <div class="legend-row">
-                        <div class="legend-swatch swatch-low" aria-hidden="true"></div>
-                        <span>Low</span>
-                    </div>
-                    <div class="legend-row">
-                        <div class="legend-swatch swatch-nodata" aria-hidden="true"></div>
-                        <span class="text-dim">No data</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div id="trending-ticker" class="ticker-bar is-hidden" aria-label="Trending topics" role="marquee">
-            <div class="ticker-label" aria-hidden="true"><i class="fas fa-bolt"></i> Trending</div>
-            <div class="ticker-track" aria-hidden="true">
-                <div class="ticker-content" id="ticker-content"></div>
-            </div>
-        </div>
-
-        <aside id="side-panel" class="panel-hidden" aria-label="Regional insights" aria-hidden="true">
-            <div class="panel-header">
-                <div class="panel-header-info">
-                    <div class="panel-label-group">
-                        <i class="fas fa-chart-pie panel-icon" aria-hidden="true"></i>
-                        <span class="panel-label">Regional Insights</span>
-                    </div>
-                    <h2 id="panel-country-name">—</h2>
-                </div>
-                <div class="panel-header-actions">
-                    <button id="share-panel-btn" class="icon-btn shadow-btn" aria-label="Copy region info" title="Copy region info">
-                        <i class="fas fa-share-nodes" aria-hidden="true"></i>
-                    </button>
-                    <button id="expand-panel-btn" class="icon-btn mobile-only shadow-btn" aria-label="Expand panel">
-                        <i class="fas fa-expand-alt" aria-hidden="true"></i>
-                    </button>
-                    <button id="close-panel-btn" class="icon-btn shadow-btn" aria-label="Close panel">
-                        <i class="fas fa-xmark" aria-hidden="true"></i>
-                    </button>
-                </div>
-            </div>
-
-            <div class="panel-content custom-scrollbar">
-                <div class="metric-card glass-card panel-animate" data-animate-order="1">
-                    <div class="metric-header">
-                        <h3>Global Activity Score</h3>
-                        <div class="score-badge" aria-label="Activity score">
-                            <i class="fas fa-fire-alt" aria-hidden="true"></i>
-                            <span id="popularity-score-value">0</span>
-                        </div>
-                    </div>
-                    <div class="score-bar-container" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
-                        <div id="popularity-score-bar" class="score-bar" style="width:0%"></div>
-                    </div>
-                    <div class="score-sublabel">Aggregated mentions from global feeds</div>
-                </div>
-
-                <div class="topics-section panel-animate" data-animate-order="2">
-                    <div class="section-header">
-                        <h3><i class="fas fa-hashtag text-accent" aria-hidden="true"></i> Trending Topics</h3>
-                        <span class="badge" id="topics-count" aria-label="topic count">0</span>
-                    </div>
-                    <ul id="top-topics-list" class="data-list" aria-label="Trending topics list"></ul>
-                </div>
-
-                <div class="related-section panel-animate" data-animate-order="3">
-                    <div class="section-header">
-                        <h3><i class="fas fa-rss text-accent" aria-hidden="true"></i> Latest Sources</h3>
-                        <span class="badge" id="articles-count" aria-label="article count">0</span>
-                    </div>
-                    <ul id="related-articles-list" class="data-list" aria-label="Related articles list"></ul>
-                </div>
-            </div>
-
-            <div class="panel-drag-handle mobile-only" aria-hidden="true"></div>
-        </aside>
-
+  <header id="app-header" role="banner">
+    <div class="header-left">
+      <div class="logo" id="logo">
+        <i class="fa-solid fa-earth-americas"></i>
+        <span class="logo-text">Knowledge Map</span>
+        <span class="logo-badge">LIVE</span>
+      </div>
     </div>
-
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-    <script src="script.js"></script>
+    <div class="header-center">
+      <div class="stats-bar" id="stats-bar" aria-live="polite">
+        <div class="stat-item" id="stat-topics">
+          <i class="fa-solid fa-hashtag"></i>
+          <span class="stat-value" id="stat-topics-value">0</span>
+          <span class="stat-label">Topics</span>
+        </div>
+        <div class="stat-item" id="stat-regions">
+          <i class="fa-solid fa-globe"></i>
+          <span class="stat-value" id="stat-regions-value">0</span>
+          <span class="stat-label">Regions</span>
+        </div>
+        <div class="stat-item" id="stat-sync">
+          <i class="fa-solid fa-clock"></i>
+          <span class="stat-value" id="stat-sync-value">—</span>
+          <span class="stat-label">Last Sync</span>
+        </div>
+        <div class="stat-item freshness-indicator" id="stat-freshness">
+          <span class="freshness-dot" id="freshness-dot"></span>
+          <span class="stat-label" id="freshness-label">Waiting</span>
+        </div>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="search-container" id="search-container">
+        <i class="fa-solid fa-magnifying-glass search-icon"></i>
+        <input type="text" id="search-input" placeholder="Search countries… ( / )" autocomplete="off" aria-label="Search countries" />
+        <ul id="search-dropdown" class="search-dropdown" role="listbox" aria-label="Search results"></ul>
+      </div>
+      <button class="header-btn" id="btn-sync" title="Sync data (R)" aria-label="Refresh data">
+        <i class="fa-solid fa-arrows-rotate"></i>
+      </button>
+      
+      <button class="header-btn mobile-filter-toggle" id="btn-filter-mobile" title="Toggle filters (F)" aria-label="Toggle category filters">
+        <i class="fa-solid fa-filter"></i>
+      </button>
+    </div>
+  </header>
+  <nav id="filter-bar" class="filter-bar" role="navigation" aria-label="Category filters">
+    <button class="filter-chip active" data-category="all">
+      <i class="fa-solid fa-layer-group"></i> All
+    </button>
+    <button class="filter-chip" data-category="conflict">
+      <i class="fa-solid fa-shield-halved"></i> Conflict &amp; Politics
+    </button>
+    <button class="filter-chip" data-category="science">
+      <i class="fa-solid fa-flask"></i> Science &amp; Tech
+    </button>
+    <button class="filter-chip" data-category="economy">
+      <i class="fa-solid fa-chart-line"></i> Economy
+    </button>
+    <button class="filter-chip" data-category="culture">
+      <i class="fa-solid fa-palette"></i> Culture &amp; Sports
+    </button>
+  </nav>
+  <main id="map-container">
+    <div id="map" role="application" aria-label="Interactive world map"></div>
+  </main>
+  <aside id="detail-panel" class="detail-panel" role="complementary" aria-label="Country details" aria-hidden="true" inert>
+    <div class="panel-drag-handle" id="panel-drag-handle" aria-hidden="true">
+      <span class="drag-bar"></span>
+    </div>
+    <div class="panel-header">
+      <div class="panel-title-row">
+        <h2 id="panel-country-name" class="panel-country-name">—</h2>
+        <div class="panel-actions">
+          <button class="panel-btn" id="btn-share" title="Share" aria-label="Share country summary">
+            <i class="fa-solid fa-share-nodes"></i>
+          </button>
+          <button class="panel-btn" id="btn-close-panel" title="Close (Esc)" aria-label="Close panel">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+      </div>
+      <div class="panel-tabs" role="tablist" aria-label="Detail tabs">
+        <button class="panel-tab active" role="tab" data-tab="overview" aria-selected="true" id="tab-overview">Overview</button>
+        <button class="panel-tab" role="tab" data-tab="topics" aria-selected="false" id="tab-topics">Topics</button>
+        <button class="panel-tab" role="tab" data-tab="sources" aria-selected="false" id="tab-sources">Sources</button>
+        <button class="panel-tab" role="tab" data-tab="neighbours" aria-selected="false" id="tab-neighbours">Neighbours</button>
+      </div>
+    </div>
+    <div class="panel-body" id="panel-body">
+      <section class="tab-content active" id="content-overview" role="tabpanel" aria-labelledby="tab-overview">
+        <div class="overview-score-block">
+          <div class="score-label">Activity Score</div>
+          <div class="score-big" id="overview-score">0</div>
+          <div class="score-bar-track">
+            <div class="score-bar-fill" id="overview-bar"></div>
+          </div>
+        </div>
+        <div class="overview-delta" id="overview-delta">
+          <span class="delta-icon"></span>
+          <span class="delta-text">No previous data</span>
+        </div>
+        <div class="overview-meta">
+          <span id="overview-updated"><i class="fa-regular fa-clock"></i> —</span>
+        </div>
+      </section>
+      <section class="tab-content" id="content-topics" role="tabpanel" aria-labelledby="tab-topics">
+        <div class="topics-chart" id="topics-chart">
+          <div class="skeleton-block"></div>
+          <div class="skeleton-block short"></div>
+          <div class="skeleton-block shorter"></div>
+        </div>
+      </section>
+      <section class="tab-content" id="content-sources" role="tabpanel" aria-labelledby="tab-sources">
+        <ul class="sources-list" id="sources-list">
+          <li class="skeleton-block"></li>
+          <li class="skeleton-block"></li>
+          <li class="skeleton-block"></li>
+        </ul>
+      </section>
+      <section class="tab-content" id="content-neighbours" role="tabpanel" aria-labelledby="tab-neighbours">
+        <ul class="neighbours-list" id="neighbours-list">
+          <li class="skeleton-block"></li>
+          <li class="skeleton-block"></li>
+          <li class="skeleton-block"></li>
+        </ul>
+      </section>
+    </div>
+  </aside>
+  <div id="trending-ticker" class="trending-ticker" aria-label="Trending topics">
+    <div class="ticker-label">
+      <i class="fa-solid fa-fire-flame-curved"></i> Trending
+    </div>
+    <div class="ticker-track" id="ticker-track">
+      <div class="ticker-content" id="ticker-content"></div>
+    </div>
+  </div>
+  <div id="toast-container" class="toast-container" aria-live="polite" aria-relevant="additions"></div>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="script.js"></script>
 </body>
 </html>
